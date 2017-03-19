@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/file"
+        android:title="@string/file"
+        android:layout_width="match_parent">
+    <menu xmlns:android="http://schemas.android.com/apk/res/android">
+        <item android:id="@+id/file_menu"
+            android:title="@string/file"
+            android:layout_width="match_parent">
+            <!-- "file" submenu -->
+            <menu>
+                <item android:id="@+id/create_new"
+                    android:title="@string/create_new"
+                    android:layout_width="match_parent"/>
+                <item android:id="@+id/open"
+                    android:title="@string/open"
+                    android:layout_width="match_parent"/>
+                <item android:id="@+id/save"
+                    android:title="@string/save"
+                    android:layout_width="match_parent"/>
+            </menu>
+        </item>
+    </menu>
+</item>
+    <item android:id="@+id/draw"
+        android:title="@string/draw"
+        android:layout_width="match_parent">
+    <menu xmlns:android="http://schemas.android.com/apk/res/android">
+        <item android:id="@+id/draw_menu"
+            android:title="@string/draw"
+            android:layout_width="match_parent">
+
+            <!-- "file" submenu -->
+            <menu>
+                <item android:id="@+id/draw_line"
+                    android:title="@string/drawl"
+                    android:layout_width="match_parent"/>
+                <item android:id="@+id/draw_rect"
+                    android:title="@string/drawr"
+                    android:layout_width="match_parent"/>
+            </menu>
+        </item>
+    </menu>
+</item>
+    <item android:id="@+id/overlay"
+        android:title="@string/overlay"
+        android:layout_width="match_parent">
+    <menu xmlns:android="http://schemas.android.com/apk/res/android">
+        <item android:id="@+id/overlay_menu"
+            android:title="@string/overlay"
+            android:layout_width="match_parent">
+            <!-- "file" submenu -->
+            <menu>
+                <item android:id="@+id/geometry"
+                    android:title="@string/geoOL"
+                    android:layout_width="match_parent"/>
+                <item android:id="@+id/perspective"
+                    android:title="@string/perspOL"
+                    android:layout_width="match_parent"/>
+            </menu>
+        </item>
+    </menu>
+    </item>
+</menu>

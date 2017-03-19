@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">CompositionApplication</string>
+
+    <string name="file">File</string>
+    <string name="draw">Draw</string>
+    <string name="overlay">Overlay</string>
+
+    <string name="create_new">New</string>
+    <string name="open">Open</string>
+    <string name="save">Save</string>
+
+    <string name="drawl">Draw Line</string>
+    <string name="drawr">Draw Rect</string>
+    <string name="geoOL">Geometry</string>
+    <string name="perspOL">Perspective</string>
+
+
+</resources>
