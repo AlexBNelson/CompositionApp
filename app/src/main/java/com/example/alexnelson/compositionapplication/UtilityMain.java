@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
+import android.view.ScaleGestureDetector;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -68,6 +69,8 @@ public class UtilityMain {
 
         return textureHandle[0];
     }
+
+
 
    // private boolean hasGLES20() {
        // ActivityManager am = (ActivityManager)

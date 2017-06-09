@@ -1,6 +1,9 @@
 package com.example.alexnelson.compositionapplication;
 
 import android.opengl.GLES20;
+import android.util.Log;
+
+import java.util.ArrayList;
 
 /**
  * Created by Alex Nelson on 21/03/2017.
@@ -60,6 +63,73 @@ public class UtilityGraphics {
         // return the shader
         return shader;
     }
+
+
+    //the skew is the value added to a vector position to account for magnification level
+
+    public static float leftSkew(float imageWidth){
+        return AppFragment.xFocus-(imageWidth*AppFragment.scaleFactor/2);
+    }
+
+    public static float rightSkew(float imageWidth){
+        return AppFragment.xFocus+(imageWidth*AppFragment.scaleFactor/2);
+    }
+
+    public static float topSkew(float imageHeight){
+        return AppFragment.yFocus-(imageHeight*AppFragment.scaleFactor/2);
+    }
+
+    public static float bottomSkew(float imageWidth){
+        return AppFragment.yFocus+(imageWidth*AppFragment.scaleFactor/2);
+    }
+    /*public static ArrayList zoomCentreOut(float x1, float x2, float y1, float y2){ // returns centre of zoom
+        double x;
+        double y;
+
+        if(x2>x1){
+            x=(x1+((x2-x1)/2));
+        }
+        else{
+            x=(x2+((x1-x2)/2));
+        }
+
+        if(y2>y1){
+            y=(y1+((y2-y1)/2));
+        }
+        else{
+            y=(y2+((y1-y2)/2));
+        }
+
+        ArrayList a=new ArrayList();
+        //Log.i("x", String.valueOf(y));
+        //Log.i("width", String.valueOf(ModGLRenderer.vectorY));
+        a.add((float)x/ModGLRenderer.vectorX); // get coordinate between 0 and 1
+        a.add((float)y/ModGLRenderer.vectorY);
+        return a;
+    }*/
+
+    /*public static float zoomMagOut(float x1, float x2, float y1, float y2){
+        float x;
+        float y;
+
+        if(x2>x1){
+            x=x2-x1;
+        }
+        else{
+            x=x1-x2;
+        }
+
+        if(y2>y1){
+            y=y2-y1;
+        }
+        else{
+            y=y1-y2;
+        }
+
+            return (float)Math.sqrt((x*x)+(y*y));
+    }*/
+
+
 
     /*public static int[] lineVertex(int[] coords){
 

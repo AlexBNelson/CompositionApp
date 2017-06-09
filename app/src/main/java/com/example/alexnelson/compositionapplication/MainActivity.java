@@ -33,7 +33,7 @@ import static android.provider.MediaStore.Images.Media.getBitmap;
 import static com.example.alexnelson.compositionapplication.ActionStates.ZOOM_0_DOWN;
 
 public class MainActivity extends AppCompatActivity {
-    final int DRAW_LINE=11;
+    final int DRAW_LINE=11;//maybe have as part of separate enumeration
     final int PICK_IMAGE=5; //request code for activity request
     ImageView ImageView; //views and components are capitalised
 
@@ -58,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
             // Fullscreen mode
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+            AppFragment.appContext=this.getApplicationContext(); //maybe have a separate method for this
     }
 
 

@@ -13,6 +13,8 @@ import android.view.ScaleGestureDetector;
 public class ModSurfaceView extends GLSurfaceView{
 
     private final ModGLRenderer mRenderer;
+    static ScaleGestureDetector.OnScaleGestureListener mScaleListener=new ScaleListener();;
+    static ScaleGestureDetector mScaleDetector=new ScaleGestureDetector(AppFragment.appContext, mScaleListener);
 
 
     public  ModSurfaceView(Context context, Bitmap bitmap){
@@ -30,7 +32,9 @@ public class ModSurfaceView extends GLSurfaceView{
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        mRenderer.processTouchEvent(e);//touchstate being what happens when a touch event occurs
+        mScaleDetector.onTouchEvent(e);
+        if (!mScaleDetector.isInProgress()){
+        mRenderer.processTouchEvent(e);}//touchstate being what happens when a touch event occurs
         return true;
     }
 }

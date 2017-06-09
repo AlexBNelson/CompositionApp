@@ -14,6 +14,7 @@ import android.support.v4.view.MotionEventCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.widget.RelativeLayout;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -36,6 +38,7 @@ import static com.example.alexnelson.compositionapplication.ActionStates.DRAW_LI
 import static com.example.alexnelson.compositionapplication.ActionStates.ZOOM_0_DOWN;
 import static com.example.alexnelson.compositionapplication.ActionStates.ZOOM_1_DOWN;
 import static com.example.alexnelson.compositionapplication.ActionStates.ZOOM_2_DOWN;
+import static com.example.alexnelson.compositionapplication.ModSurfaceView.mScaleDetector;
 
 /**
  * Created by Alex Nelson on 21/03/2017.
@@ -58,8 +61,8 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
     long mLastTime;
     int mProgram;
 
-    public int mImageHeight;
-    public int mImageWidth;
+    public int mImageHeight;//width of bitmap
+    public int mImageWidth;//"
     public static float vertices[];
     public static short indices[];
     public static float uvs[];
@@ -71,7 +74,34 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
     final int INVALID_POINTER_ID = -1;
     int firstPointerID=INVALID_POINTER_ID; //ID of first pointer down  // value is -1 so that exception is thrown if this value isnt changed
     int secondPointerID=INVALID_POINTER_ID;
+
+    //Fields for zoom function
     //-----------------------------------------------
+    public ArrayList zoomCentre; //Point directly between two pointers when zooming
+
+    private float zoomReference;//magnitude of previous distance between opposite corners in zoom rectangle formed by
+    //two pointers to which is compared to zoomNew after an ACTION_MOVE action
+    private float zoomNew;//see above
+    private float zoomRatio;//ratio of zoomNew over zoomReference
+    private float zoomState;//absolute zoom value--should be only zoom variable to interface with
+
+
+    float X1=-1;//values for pointers
+    float X2=-1;
+    float Y1=-1;
+    float Y2=-1;
+    //------------------------------------------------
+    static float vectorX=-1;//vertex x and y magnitudes
+    static float vectorY=-1;
+    //--------------------------------------------------
+    static float mLeftMag;
+    static float mTopMag;
+    static float mBottomMag;
+    static float mRightMag;
+
+
+
+
 
 
 
@@ -82,18 +112,32 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
         mImage=AppFragment.persistentBM;
         mImageWidth=AppFragment.persistentBM.getWidth();
         mImageHeight=AppFragment.persistentBM.getHeight();
+        zoomRatio=1;
+
+
     }
 
     public void processTouchEvent(MotionEvent e){
+
+        if(e.getX()>mImageWidth||e.getY()>mImageHeight){//if the input event is outside the bounds of the picture
+            return;
+        }
+
+
+        if (!mScaleDetector.isInProgress()){
 
         switch(AppFragment.touchState){//MAYBE HAVE A METHOD FOR EACH CASE-START WITH THE CODE IN THE CAE STATEMENTS
             case NO_RESPONSE: break; //no touch response, e.g. when no file is open
 
             case ZOOM_0_DOWN: if(e.getActionMasked()==ACTION_DOWN){
+
                 AppFragment.touchState=ZOOM_1_DOWN;
+
                 int index = MotionEventCompat.getActionIndex(e);
-                e.getX();
-                e.getY();
+                X1=e.getX();
+
+                Y1=e.getY();
+
                 firstPointerID=e.getPointerId(index);
                 break;
             }
@@ -101,43 +145,68 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
 
             case ZOOM_1_DOWN: if(e.getActionMasked()==ACTION_MOVE) { //pan
                 int index = MotionEventCompat.getActionIndex(e);
-                e.getX();
-                e.getY();
+
                 break;
             }
-                else if(e.getActionMasked()==ACTION_POINTER_DOWN&&e.getPointerCount()==2){ //go into zoom mode // also means there cannot be more than 2 pointers
+                else if(e.getActionMasked()==ACTION_POINTER_DOWN&&e.getPointerCount()==2){ //go into zoom mode
+                // also means there cannot be more than 2 pointers
                     AppFragment.touchState=ZOOM_2_DOWN;
                     secondPointerID=e.getPointerId(MotionEventCompat.getActionIndex(e));
+
+                //zoomReference=UtilityGraphics.zoomMagOut(e.getX(e.findPointerIndex(secondPointerID)),
+                        //e.getX(e.findPointerIndex(firstPointerID)), e.getY(e.findPointerIndex(secondPointerID)),
+                        //e.getY(e.findPointerIndex(firstPointerID)));
+
+                    X2=e.getX();
+                    Y2=e.getY();
+
+                //zoomReference=UtilityGraphics.zoomMagOut(X1, X2, Y1, Y2);
+
                 break;
             } else if (e.getActionMasked() == ACTION_UP){
                 firstPointerID=INVALID_POINTER_ID;
                 AppFragment.touchState=ZOOM_0_DOWN;
             }
+                else{break;}
 
 
             case ZOOM_2_DOWN: if(e.getActionMasked()==ACTION_MOVE){
                 //pointer ID remains constant, index not necessarily
                 int index = MotionEventCompat.getActionIndex(e);
 
-                float X1;
-                float Y1;
-                float X2;
-                float Y2;
-
                 if(e.getPointerId(index)==firstPointerID){ //if the pointer that is moved is the first one
-                    X1=e.getX(index);
-                    Y1=e.getY(index);
-                    X2=e.getX(e.findPointerIndex(secondPointerID));
-                    Y2=e.getY(e.findPointerIndex(secondPointerID));
+
+                    X1=e.getX();
+                    Y1=e.getY();
+                    //zoomCentre=UtilityGraphics.zoomCentreOut(X1, X2, Y1, Y2);
+                    //zoomNew=UtilityGraphics.zoomMagOut(X1, X2, Y1, Y2);
+
+                    //X1=e.getX(index);
+                    //Y1=e.getY(index);
+                    //X2=e.getX(e.findPointerIndex(firstPointerID));
+                    //Y2=e.getY(e.findPointerIndex(firstPointerID));
+
                 }
                 else{
-                    X1=e.getX(index);
-                    Y1=e.getY(index);
-                    X2=e.getX(e.findPointerIndex(firstPointerID));
-                    Y2=e.getY(e.findPointerIndex(firstPointerID));
+
+                    X2=e.getX();
+                    Y2=e.getY();
+
+                    //zoomCentre=UtilityGraphics.zoomCentreOut(X2, X1, Y2, Y1);
+                    //zoomNew=UtilityGraphics.zoomMagOut(X2, X1, Y2, Y1);
                 }
 
+                //zoomRatio=zoomRatio*zoomReference/zoomNew;
 
+
+
+                //uvHiX=(float)zoomCentre.get(0)+zoomRatio/2;
+                //uvHiY=(float)zoomCentre.get(1)+zoomRatio/2;
+                //uvLoX=(float)zoomCentre.get(0)-zoomRatio/2;
+                //uvLoY=(float)zoomCentre.get(1)-zoomRatio/2;
+
+                //Reset the zoom reference to wherever this move action ends
+                //zoomReference=zoomNew;
 
                 try{
                 e.findPointerIndex(firstPointerID);}
@@ -151,10 +220,15 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
                 else if(e.getActionMasked()==ACTION_UP){
 
                     if(firstPointerID==e.getPointerId(MotionEventCompat.getActionIndex(e))){
-                    firstPointerID=INVALID_POINTER_ID;
+                        firstPointerID=secondPointerID;
+                        secondPointerID=INVALID_POINTER_ID;
+
+                        AppFragment.touchState=ZOOM_1_DOWN;
                     }
                     else if(secondPointerID==e.getPointerId(MotionEventCompat.getActionIndex(e)))
-                    AppFragment.touchState=ZOOM_1_DOWN;
+                        secondPointerID=INVALID_POINTER_ID;
+
+                        AppFragment.touchState=ZOOM_1_DOWN;
             }
 
 
@@ -164,12 +238,22 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
 
             }
 
+            default: break;
 
-        }
+        }}
 
     }
 
+
+
     public void drawImage(){
+
+
+        float topSkew=0;
+        float bottomSkew=0;
+        float rightSkew=0;
+        float leftSkew=0;
+
         //draws base image
         mScreenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
         mScreenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
@@ -179,27 +263,65 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
 
 //if ratio of the image height over the image width is greater than that of the screen
         if(((100*mImageHeight)/mImageWidth)>(100*mScreenHeight/mScreenWidth)){ // *100 because dividing the floats results in 0 if less than 1
+
+            //if(AppFragment.HAS_BEEN_MAGNIFIED){
+
+            topSkew=AppFragment.scaleFactor*mScreenHeight/2;
+            bottomSkew=AppFragment.scaleFactor*mScreenHeight/2;
+            rightSkew=AppFragment.scaleFactor*((mImageWidth*mScreenHeight)/mImageHeight/2);
+            leftSkew=AppFragment.scaleFactor*((mImageWidth*mScreenHeight)/mImageHeight/2);
+           // }
+            float vertCent=mScreenHeight/2;//vertical centre of image
+            float horizCent=mImageWidth*mScreenHeight/mImageHeight/2;
+
+
             vertices=new float[]{
-                    0f, mScreenHeight, 0.0f,
-                    0f, 0.0f,0.0f,
-                    ((mImageWidth*mScreenHeight)/mImageHeight), 0.0f, 0.0f,
-                    ((mImageWidth*mScreenHeight)/mImageHeight), mScreenHeight, 0.0f
+                    horizCent-leftSkew, vertCent-topSkew, 0.0f,
+                    horizCent-leftSkew, vertCent+bottomSkew,0.0f,
+                    horizCent+rightSkew, vertCent+bottomSkew, 0.0f,
+                    horizCent+rightSkew, vertCent-topSkew, 0.0f
 
 
 
             };
+
+            /*0f-leftSkew, mScreenHeight-topSkew, 0.0f,
+                    0f-leftSkew, 0.0f+bottomSkew,0.0f,
+                    ((mImageWidth*mScreenHeight)/mImageHeight)+rightSkew, 0.0f+bottomSkew, 0.0f,
+                    ((mImageWidth*mScreenHeight)/mImageHeight)+rightSkew, mScreenHeight-topSkew, 0.0f*/
+
+            vectorX=((mImageWidth*mScreenHeight)/mImageHeight);
+            vectorY=mScreenHeight;
 
         }else{
+
+            //the 750px offset has to be in the skew in order for the image to scale from the centre
+            topSkew=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)+750)/2;
+            bottomSkew=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)+750)/2;
+            rightSkew=(AppFragment.scaleFactor*mScreenWidth)/2;
+            leftSkew=(AppFragment.scaleFactor*mScreenWidth)/2;
+            // }
+            float vertCent=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth))/2;//vertical centre of image
+            float horizCent=(AppFragment.scaleFactor*mScreenWidth)/2;
+
             vertices=new float[]{
-                    0f, mScreenHeight-350, 0.0f,//WILL NEED TO GET RID OF MAGIC NUMBER
-                    0f, (mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)-350,0.0f,
-                    mScreenWidth, (mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)-350, 0.0f,
-                    mScreenWidth, mScreenHeight-350, 0.0f
+                    horizCent-leftSkew, (vertCent-topSkew), 0.0f,
+                    horizCent-leftSkew, (vertCent+bottomSkew),0.0f,
+                    horizCent+rightSkew, (vertCent+bottomSkew), 0.0f,
+                    horizCent+rightSkew, (vertCent-topSkew), 0.0f
 
             };
 
+            /*0f, (mScreenHeight-350), 0.0f,//WILL NEED TO GET RID OF MAGIC NUMBER
+                    0f, (mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)-350,0.0f,
+                    mScreenWidth, (mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)-350, 0.0f,
+                    mScreenWidth, (mScreenHeight-350), 0.0f*/
 
-            Log.i("INFO", Float.toString((100*mImageHeight)/mImageWidth));
+
+            vectorX=(AppFragment.scaleFactor*mScreenWidth)/2;
+            vectorY=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth))/2;
+
+
             }
 
         SetupTriangle();
@@ -230,7 +352,7 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
         GLES20.glAttachShader(UtilityGraphics.sp_Image, fragmentShader);
         GLES20.glLinkProgram(UtilityGraphics.sp_Image);
 
-        // Set our shader programm
+        // Set our shader program
         GLES20.glUseProgram(UtilityGraphics.sp_Image);
         Render(mtrxProjectionAndView);
         //mImageHeight*(768/mImageWidth)
@@ -264,7 +386,7 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
         Matrix.orthoM(mtrxProjection, 0, 0f, mScreenWidth, 0.0f, mScreenHeight, 0, 50);
 
         // Set the camera position (View matrix)
-        Matrix.setLookAtM(mtrxView, 0, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+        Matrix.setLookAtM(mtrxView, 0, 0f, 0f, 1.0f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
 
         // Calculate the projection and view transformation
         Matrix.multiplyMM(mtrxProjectionAndView, 0, mtrxProjection, 0, mtrxView, 0);
@@ -278,10 +400,10 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
     {
         // Create our UV coordinates.
         uvs = new float[] {
-                0.0f, 0.0f,
-                0.0f, 1.0f,
-                1.0f, 1.0f,
-                1.0f, 0.0f
+                0, 0,
+                0, 1,
+                1, 1,
+                1, 0
         };
 
         // The texture buffer

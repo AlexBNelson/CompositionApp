@@ -1,10 +1,12 @@
 package com.example.alexnelson.compositionapplication;
 
 import android.app.Fragment;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.support.annotation.Dimension;
 import android.support.annotation.Size;
+import android.view.ScaleGestureDetector;
 
 /**
  * Created by Alex Nelson on 27/03/2017.
@@ -19,6 +21,12 @@ public class AppFragment extends Fragment {
     public static ModSurfaceView mGLSurfaceView;
     public static Point canvasDimensions; //Point but refers to dimensions
     public static ActionStates touchState; //what happens when you perform touch actions on the canvas
+    public static Context appContext;
+    public static float scaleFactor=1;
+    public static float xFocus;
+    public static float yFocus;
+    static boolean HAS_BEEN_MAGNIFIED=false;
+
 
     //ALTERNATIVES TO ActionStates ENUM
 
