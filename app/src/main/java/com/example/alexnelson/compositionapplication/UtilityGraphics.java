@@ -64,6 +64,35 @@ public class UtilityGraphics {
         return shader;
     }
 
+    public static void setupShaders(){
+        // Set the clear color to black
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1);
+        int vertexShader = UtilityGraphics.loadShader(GLES20.GL_VERTEX_SHADER, UtilityGraphics.vs_SolidColor);
+        int fragmentShader = UtilityGraphics.loadShader(GLES20.GL_FRAGMENT_SHADER, UtilityGraphics.fs_SolidColor);
+
+        UtilityGraphics.sp_SolidColor = GLES20.glCreateProgram();             // create empty OpenGL ES Program
+        GLES20.glAttachShader(UtilityGraphics.sp_SolidColor, vertexShader);   // add the vertex shader to program
+        GLES20.glAttachShader(UtilityGraphics.sp_SolidColor, fragmentShader); // add the fragment shader to program
+        GLES20.glLinkProgram(UtilityGraphics.sp_SolidColor);                  // creates OpenGL ES program executables
+
+        // Set our shader program
+        GLES20.glUseProgram(UtilityGraphics.sp_SolidColor);
+
+        // Create the shaders, images
+        vertexShader = UtilityGraphics.loadShader(GLES20.GL_VERTEX_SHADER,
+                UtilityGraphics.vs_Image);
+        fragmentShader = UtilityGraphics.loadShader(GLES20.GL_FRAGMENT_SHADER,
+                UtilityGraphics.fs_Image);
+
+        UtilityGraphics.sp_Image = GLES20.glCreateProgram();
+        GLES20.glAttachShader(UtilityGraphics.sp_Image, vertexShader);
+        GLES20.glAttachShader(UtilityGraphics.sp_Image, fragmentShader);
+        GLES20.glLinkProgram(UtilityGraphics.sp_Image);
+
+        // Set our shader program
+        GLES20.glUseProgram(UtilityGraphics.sp_Image);
+    }
+
 
     //the skew is the value added to a vector position to account for magnification level
 

@@ -64,7 +64,7 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
     public int mImageHeight;//width of bitmap
     public int mImageWidth;//"
     public static float vertices[];
-    public static short indices[];
+    public static short indices[]=new short[] {0, 1, 2, 0, 2, 3};;
     public static float uvs[];
     public FloatBuffer vertexBuffer;//Byte buffer to store vertices in native order
     public ShortBuffer drawListBuffer;
@@ -113,6 +113,11 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
         mImageWidth=AppFragment.persistentBM.getWidth();
         mImageHeight=AppFragment.persistentBM.getHeight();
         zoomRatio=1;
+
+        UtilityGraphics.setupShaders();
+
+        SetupTexture();
+
 
 
     }
@@ -265,7 +270,7 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
         if(((100*mImageHeight)/mImageWidth)>(100*mScreenHeight/mScreenWidth)){ // *100 because dividing the floats results in 0 if less than 1
 
             //if(AppFragment.HAS_BEEN_MAGNIFIED){
-
+            //Skews are divided by 2 because position of image sides is calculated from centre of screen
             topSkew=AppFragment.scaleFactor*mScreenHeight/2;
             bottomSkew=AppFragment.scaleFactor*mScreenHeight/2;
             rightSkew=AppFragment.scaleFactor*((mImageWidth*mScreenHeight)/mImageHeight/2);
@@ -296,12 +301,15 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
         }else{
 
             //the 750px offset has to be in the skew in order for the image to scale from the centre
-            topSkew=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)+750)/2;
-            bottomSkew=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)+750)/2;
+            //topSkew=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)+(mScreenHeight/2))/2;
+            //bottomSkew=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth)+(mScreenHeight/2))/2;
+            topSkew=(AppFragment.scaleFactor*mImageHeight*mScreenWidth/mImageWidth)/2;
+            bottomSkew=(AppFragment.scaleFactor*mImageHeight*mScreenWidth/mImageWidth)/2;
             rightSkew=(AppFragment.scaleFactor*mScreenWidth)/2;
             leftSkew=(AppFragment.scaleFactor*mScreenWidth)/2;
-            // }
-            float vertCent=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth))/2;//vertical centre of image
+
+            //float vertCent=(AppFragment.scaleFactor*mScreenHeight-(mScreenHeight-(mImageHeight*mScreenWidth)/mImageWidth))/2;//vertical centre of image
+            float vertCent=((AppFragment.scaleFactor*mScreenHeight*mScreenWidth/mImageWidth)+mScreenHeight)/2;
             float horizCent=(AppFragment.scaleFactor*mScreenWidth)/2;
 
             vertices=new float[]{
@@ -324,36 +332,23 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
 
             }
 
-        SetupTriangle();
+        uvBuffer.put(uvs);
+        uvBuffer.position(0);
+        // The vertex buffer.
+        ByteBuffer bb = ByteBuffer.allocateDirect(vertices.length * 4);
+        bb.order(ByteOrder.nativeOrder());
+        vertexBuffer = bb.asFloatBuffer();
+        vertexBuffer.put(vertices);
+        vertexBuffer.position(0);
 
-        // Create the image information
-        SetupImage();
-        // Set the clear color to black
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1);
-        int vertexShader = UtilityGraphics.loadShader(GLES20.GL_VERTEX_SHADER, UtilityGraphics.vs_SolidColor);
-        int fragmentShader = UtilityGraphics.loadShader(GLES20.GL_FRAGMENT_SHADER, UtilityGraphics.fs_SolidColor);
+        // initialize byte buffer for the draw list
+        ByteBuffer dlb = ByteBuffer.allocateDirect(indices.length * 2);
+        dlb.order(ByteOrder.nativeOrder());
+        drawListBuffer = dlb.asShortBuffer();
+        drawListBuffer.put(indices);
+        drawListBuffer.position(0);
 
-        UtilityGraphics.sp_SolidColor = GLES20.glCreateProgram();             // create empty OpenGL ES Program
-        GLES20.glAttachShader(UtilityGraphics.sp_SolidColor, vertexShader);   // add the vertex shader to program
-        GLES20.glAttachShader(UtilityGraphics.sp_SolidColor, fragmentShader); // add the fragment shader to program
-        GLES20.glLinkProgram(UtilityGraphics.sp_SolidColor);                  // creates OpenGL ES program executables
 
-        // Set our shader program
-        GLES20.glUseProgram(UtilityGraphics.sp_SolidColor);
-
-        // Create the shaders, images
-        vertexShader = UtilityGraphics.loadShader(GLES20.GL_VERTEX_SHADER,
-                UtilityGraphics.vs_Image);
-        fragmentShader = UtilityGraphics.loadShader(GLES20.GL_FRAGMENT_SHADER,
-                UtilityGraphics.fs_Image);
-
-        UtilityGraphics.sp_Image = GLES20.glCreateProgram();
-        GLES20.glAttachShader(UtilityGraphics.sp_Image, vertexShader);
-        GLES20.glAttachShader(UtilityGraphics.sp_Image, fragmentShader);
-        GLES20.glLinkProgram(UtilityGraphics.sp_Image);
-
-        // Set our shader program
-        GLES20.glUseProgram(UtilityGraphics.sp_Image);
         Render(mtrxProjectionAndView);
         //mImageHeight*(768/mImageWidth)
     }
@@ -399,20 +394,19 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
     public void SetupImage()
     {
         // Create our UV coordinates.
-        uvs = new float[] {
-                0, 0,
-                0, 1,
+        /*uvs = new float[] {
                 1, 1,
-                1, 0
+                1, 0,
+                0, 0,
+                0, 1
         };
 
         // The texture buffer
         ByteBuffer bb = ByteBuffer.allocateDirect(uvs.length * 4);
         bb.order(ByteOrder.nativeOrder());
-        uvBuffer = bb.asFloatBuffer();
-        uvBuffer.put(uvs);
-        uvBuffer.position(0);
+        uvBuffer = bb.asFloatBuffer();*/
 
+        /*
         // Generate Textures, if more needed, alter these numbers.
         int[] texturenames = new int[1];
         GLES20.glGenTextures(1, texturenames, 0);
@@ -446,29 +440,84 @@ public class ModGLRenderer implements GLSurfaceView.Renderer {
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
 
         // We are done using the bitmap so we should recycle it.
-        //bmp.recycle();
+        //bmp.recycle();*/
 
     }
 
-    public void SetupTriangle()
-    {
-        // We have create the vertices of our view.
 
-        indices = new short[] {0, 1, 2, 0, 2, 3}; // loop in the android official tutorial opengles why different order.
 
+
+
+    public void SetupVertices(){
         // The vertex buffer.
+
+        //vertices initialized for cosmetic reasons and anticipated convenience
+        vertices= new float[]{
+                0, 0, 0.0f,
+                0, 0, 0.0f,
+                0, 0, 0.0f,
+                0, 0, 0.0f
+        };
+
         ByteBuffer bb = ByteBuffer.allocateDirect(vertices.length * 4);
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
-        vertexBuffer.put(vertices);
-        vertexBuffer.position(0);
+
+
+        indices = new short[] {0, 1, 2, 0, 2, 3}; // loop in the android official tutorial opengles why different order.
 
         // initialize byte buffer for the draw list
         ByteBuffer dlb = ByteBuffer.allocateDirect(indices.length * 2);
         dlb.order(ByteOrder.nativeOrder());
         drawListBuffer = dlb.asShortBuffer();
-        drawListBuffer.put(indices);
-        drawListBuffer.position(0);
+    }
+
+
+    public void SetupTexture(){
+        // Create our UV coordinates.
+        uvs = new float[] {
+                1, 1,
+                1, 0,
+                0, 0,
+                0, 1
+        };
+
+        // The texture buffer
+        ByteBuffer bb = ByteBuffer.allocateDirect(uvs.length * 4);
+        bb.order(ByteOrder.nativeOrder());
+        uvBuffer = bb.asFloatBuffer();
+
+        // Generate Textures, if more needed, alter these numbers.
+        int[] texturenames = new int[1];
+        GLES20.glGenTextures(1, texturenames, 0);
+
+
+        // Temporary create a bitmap
+        Bitmap bmp = mImage;
+        try{
+        }
+        catch(NullPointerException e){
+            Log.e("error", "no image selected");
+        }
+
+        // Bind texture to texturename
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texturenames[0]);
+
+        // Set filtering
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER,
+                GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER,
+                GLES20.GL_LINEAR);
+
+        // Set wrapping mode
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S,
+                GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T,
+                GL_CLAMP_TO_EDGE);
+
+        // Load the bitmap into the bound texture.
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
 
     }
 
